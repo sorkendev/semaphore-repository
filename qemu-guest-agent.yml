@@ -1,10 +1,11 @@
-- name: install latest qemu-guest-agent
-  hosts: "*"
+---
+- name: Install qemu-guest-agent package
+  hosts: all
   become: true
+  become_method: ansible.builtin.sudo
+
   tasks:
-    - name: install qemu-guest-agent
-      apt:
+    - name: Install qemu-guest-agent
+      ansible.builtin.apt:
         name: qemu-guest-agent
         state: present
-        update_cache: true
-      become: true
