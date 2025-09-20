@@ -1,0 +1,34 @@
+---
+- name: Cleanup packages and logs
+  hosts: all
+  become: true
+
+  tasks:
+    # --- Debian/Ubuntu ---
+    - name: Autoremove unused packages
+      when: ansible_pkg_mgr == 'apt'
+      ansible.builtin.apt:
+        autoremove: true
+
+    - name: Autoclean apt cache
+      when: ansible_pkg_mgr == 'apt'
+      ansible.builtin.apt:
+        autoclean: true
+
+    - name: Vacuum journal logs to limit disk usage
+      when: ansible_pkg_mgr == 'apt'
+      ansible.builtin.command: journalctl --vacuum-size=200M
+      changed_when: false
+
+    # --- RHEL/CentOS ---
+    - name: Remove old kernels (keep 2 latest)
+      when: ansible_pkg_mgr == 'yum'
+      ansible.builtin.command: package-cleanup --oldkernels --count=2 -y
+      ignore_errors: yes
+
+    - name: Clean yum metadata
+      when: ansible_pkg_mgr == 'yum'
+      ansible.builtin.yum:
+        name: '*'
+        state: latest
+        update_cache: true
