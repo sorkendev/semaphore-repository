@@ -1,0 +1,38 @@
+---
+- name: System monitoring checks
+  hosts: all
+  become: true
+
+  tasks:
+    # --- Disk usage ---
+    - name: Check disk usage
+      ansible.builtin.command: df -h
+      register: disk_usage
+      changed_when: false
+
+    - name: Show disk usage
+      ansible.builtin.debug:
+        var: disk_usage.stdout_lines
+
+    # --- CPU load ---
+    - name: Check CPU load
+      ansible.builtin.command: uptime
+      register: cpu_load
+      changed_when: false
+
+    - name: Show CPU load
+      ansible.builtin.debug:
+        var: cpu_load.stdout_lines
+
+    # --- Time sync ---
+    - name: Check if chrony/ntpd is running (Debian/Ubuntu)
+      ansible.builtin.service_facts:
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Check if chrony/ntpd is running (RHEL/CentOS)
+      ansible.builtin.service_facts:
+      when: ansible_pkg_mgr == 'yum'
+
+    - name: Show time service status
+      ansible.builtin.debug:
+        var: ansible_facts.services
