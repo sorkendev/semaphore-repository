@@ -1,0 +1,90 @@
+---
+- name: System hardening tasks
+  hosts: all
+  become: true
+
+  tasks:
+    # --- Firewall ---
+    - name: Ensure firewall is installed and enabled (Ubuntu)
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Ensure firewall is installed and enabled (RHEL/CentOS)
+      ansible.builtin.yum:
+        name: firewalld
+        state: present
+      when: ansible_pkg_mgr == 'yum'
+
+    - name: Enable and start firewall (Ubuntu)
+      ansible.builtin.service:
+        name: ufw
+        state: started
+        enabled: true
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Enable and start firewall (RHEL/CentOS)
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: true
+      when: ansible_pkg_mgr == 'yum'
+
+    # --- Fail2ban ---
+    - name: Install fail2ban (Ubuntu)
+      ansible.builtin.apt:
+        name: fail2ban
+        state: present
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Install fail2ban (RHEL/CentOS)
+      ansible.builtin.yum:
+        name: fail2ban
+        state: present
+      when: ansible_pkg_mgr == 'yum'
+
+    - name: Enable and start fail2ban
+      ansible.builtin.service:
+        name: fail2ban
+        state: started
+        enabled: true
+
+    # --- SSH hardening ---
+    - name: Ensure SSH root login is disabled
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+
+    - name: Restart SSH to apply config
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Restart SSH to apply config (RHEL/CentOS)
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      when: ansible_pkg_mgr == 'yum'
+
+    # --- Ensure NTP/chrony is running ---
+    - name: Install and start chrony (Ubuntu)
+      ansible.builtin.apt:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'apt'
+
+    - name: Install and start chrony (RHEL/CentOS)
+      ansible.builtin.yum:
+        name: chrony
+        state: present
+      when: ansible_pkg_mgr == 'yum'
+
+    - name: Enable and start chrony service
+      ansible.builtin.service:
+        name: chrony
+        state: started
+        enabled: true
